@@ -13,7 +13,6 @@ import com.portable.microservices.ms_administration.iam.domain.ports.out.Account
 import com.portable.microservices.ms_administration.iam.domain.ports.out.PasswordEncryptationPortOut;
 import com.portable.microservices.ms_administration.iam.domain.ports.out.RolePersistencePortOut;
 import com.portable.microservices.ms_administration.iam.domain.ports.out.UserPersistencePortOut;
-import com.portable.microservices.ms_administration.iam.domain.ports.out.RolePersistencePortOut;
 
 @Configuration
 public class IamConfig {
