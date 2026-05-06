@@ -36,6 +36,12 @@ public class RolePersistenceAdapter implements RolePersistencePortOut {
     }
 
     @Override
+    public Optional<Role> findById(Long id) {
+        return repository.findById(id)
+                .map(entity -> new Role(entity.getId(), entity.getName(), entity.getCreatedAt()));
+    }
+
+    @Override
     public List<Role> findAll() {
         return repository.findAll().stream()
                 .map(e -> new Role(e.getId(), e.getName(), e.getCreatedAt()))

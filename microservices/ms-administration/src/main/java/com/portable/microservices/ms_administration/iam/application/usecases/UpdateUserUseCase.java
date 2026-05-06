@@ -12,12 +12,18 @@ import com.portable.microservices.ms_administration.iam.domain.ports.out.UserPer
 
 import lombok.RequiredArgsConstructor;
 
+import com.portable.microservices.ms_administration.iam.domain.ports.out.AccountPersistencePortOut;
+import com.portable.microservices.ms_administration.iam.domain.model.Account;
+import org.springframework.transaction.annotation.Transactional;
+
 @RequiredArgsConstructor
 public class UpdateUserUseCase implements UpdateUserPortIn {
     private final UserPersistencePortOut userPersistence;
     private final RolePersistencePortOut rolePersistence;
+    private final AccountPersistencePortOut accountPersistence;
 
     @Override
+    @Transactional
     public User execute(UpdateUserCommand command) {
         UUID uuid = command.uuid();
         User existing = userPersistence.findByUuid(uuid).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
@@ -39,6 +45,23 @@ public class UpdateUserUseCase implements UpdateUserPortIn {
             ZonedDateTime.now()
         );
 
-        return userPersistence.save(updated);
+        User savedUser = userPersistence.save(updated);
+
+        // Update headquarter in the associated account
+        if (command.headquarterId() != null) {
+            accountPersistence.findAll().stream()
+                .filter(a -> a.userId() != null && a.userId().equals(savedUser.id()))
+                .findFirst()
+                .ifPresent(acc -> {
+                    Account updatedAcc = new Account(
+                        acc.id(), acc.uuid(), acc.user(), acc.userId(),
+                        command.headquarterId(), acc.username(), acc.password(),
+                        acc.active(), acc.createdAt()
+                    );
+                    accountPersistence.save(updatedAcc);
+                });
+        }
+
+        return savedUser;
     }
 }

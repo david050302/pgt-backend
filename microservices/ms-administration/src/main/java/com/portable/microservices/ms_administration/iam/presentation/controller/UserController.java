@@ -14,12 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 import com.portable.microservices.ms_administration.iam.domain.ports.in.CreateUserPortIn;
-import com.portable.microservices.ms_administration.iam.domain.ports.in.ListUsersPortIn;
-import com.portable.microservices.ms_administration.iam.domain.ports.in.GetUserPortIn;
-import com.portable.microservices.ms_administration.iam.domain.ports.in.UpdateUserPortIn;
 import com.portable.microservices.ms_administration.iam.domain.ports.in.DeleteUserPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.GetUserPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.ListUsersPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.UpdateUserPortIn;
 import com.portable.microservices.ms_administration.iam.infrastructure.persistence.mapper.UserPresentationMapper;
 import com.portable.microservices.ms_administration.iam.presentation.dto.CreateUserRequest;
 import com.portable.microservices.ms_administration.iam.presentation.dto.UpdateUserRequest;
@@ -34,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
-    
+
     private final CreateUserPortIn createUserUseCase;
     private final ListUsersPortIn listUsersUseCase;
     private final GetUserPortIn getUserUseCase;
@@ -42,59 +41,66 @@ public class UserController {
     private final DeleteUserPortIn deleteUserUseCase;
     private final UserPresentationMapper mapper;
 
+
     @PostMapping
-    public ResponseEntity<ApiResponse<UserAccountResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
+    public ResponseEntity<ApiResponse<UserAccountResponse>> createUser(
+            @Valid @RequestBody CreateUserRequest request) {
+
         var command = new CreateUserPortIn.CreateUserCommand(
-            request.firstName(),
-            request.lastName(),
-            request.dni(),
-            request.username(),
-            request.password(),
-            request.headquarterId(),
-            request.roleName()
+                request.firstName(),
+                request.lastName(),
+                request.dni(),
+                request.username(),
+                request.password(),
+                request.headquarterId(),
+                request.roleName()
         );
 
         var account = createUserUseCase.execute(command);
         var response = mapper.toResponse(account);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Usuario creado exitosamente", response));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Usuario registrado exitosamente", response));
     }
 
+    /** GET /api/v1/users — Requires JWT. */
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> listUsers() {
-        var users = listUsersUseCase.execute();
-        var responses = users.stream().map(mapper::toResponse).toList();
-
+        var responses = listUsersUseCase.execute().stream()
+                .map(mapper::toResponse)
+                .toList();
         return ResponseEntity.ok(ApiResponse.ok("Usuarios listados", responses));
     }
 
+    /** GET /api/v1/users/{uuid} — Requires JWT. */
     @GetMapping("/{uuid}")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID uuid) {
         var user = getUserUseCase.execute(uuid);
-        var response = mapper.toResponse(user);
-
-        return ResponseEntity.ok(ApiResponse.ok("Usuario encontrado", response));
+        return ResponseEntity.ok(ApiResponse.ok("Usuario encontrado", mapper.toResponse(user)));
     }
 
+    /** PUT /api/v1/users/{uuid} — Requires JWT. */
     @PutMapping("/{uuid}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID uuid, @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable UUID uuid,
+            @Valid @RequestBody UpdateUserRequest request) {
+
         var command = new UpdateUserPortIn.UpdateUserCommand(
-            uuid,
-            request.firstName(),
-            request.lastName(),
-            request.headquarterId(),
-            request.roleName()
+                uuid,
+                request.firstName(),
+                request.lastName(),
+                request.headquarterId(),
+                request.roleName()
         );
 
         var updated = updateUserUseCase.execute(command);
-        var response = mapper.toResponse(updated);
-
-        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", response));
+        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", mapper.toResponse(updated)));
     }
 
-@DeleteMapping("/{uuid}")
-public ResponseEntity<Void> deleteUser(@PathVariable UUID uuid) {
-    deleteUserUseCase.execute(uuid); // <-- Solo pasas la variable directa
-    return ResponseEntity.noContent().build();
-}
+
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID uuid) {
+        deleteUserUseCase.execute(uuid);
+        return ResponseEntity.ok(ApiResponse.ok("Usuario eliminado", null));
+    }
 }

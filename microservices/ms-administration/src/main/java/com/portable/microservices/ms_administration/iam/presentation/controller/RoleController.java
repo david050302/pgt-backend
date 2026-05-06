@@ -14,7 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.portable.microservices.ms_administration.iam.domain.model.Role;
-import com.portable.microservices.ms_administration.iam.domain.ports.out.RolePersistencePortOut;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.CreateRolePortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.DeleteRolePortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.GetRolePortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.ListRolesPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.UpdateRolePortIn;
 import com.portable.microservices.ms_administration.iam.presentation.dto.CreateRoleRequest;
 import com.portable.microservices.ms_administration.iam.presentation.dto.RoleResponse;
 import com.portable.shared.infrastructure.presentation.ApiResponse;
@@ -27,40 +31,47 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RoleController {
 
-    private final RolePersistencePortOut rolePersistence;
+    private final CreateRolePortIn createRoleUseCase;
+    private final ListRolesPortIn listRolesUseCase;
+    private final GetRolePortIn getRoleUseCase;
+    private final UpdateRolePortIn updateRoleUseCase;
+    private final DeleteRolePortIn deleteRoleUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<RoleResponse>> create(@Valid @RequestBody CreateRoleRequest request) {
-        Role role = new Role(null, request.name(), null);
-        Role saved = rolePersistence.save(role);
-        RoleResponse resp = new RoleResponse(saved.id(), saved.name(), saved.createdAt());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Rol creado", resp));
+        Role saved = createRoleUseCase.execute(request.name());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Rol creado", toResponse(saved)));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<RoleResponse>>> list() {
-        var roles = rolePersistence.findAll();
-        var responses = roles.stream().map(r -> new RoleResponse(r.id(), r.name(), r.createdAt())).toList();
-        return ResponseEntity.ok(ApiResponse.ok("Roles listados", responses));
+        List<RoleResponse> roles = listRolesUseCase.execute().stream()
+                .map(this::toResponse)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok("Roles listados", roles));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<RoleResponse>> get(@PathVariable Long id) {
-        var role = rolePersistence.findAll().stream().filter(r -> r.id()!=null && r.id().equals(id)).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado"));
-        return ResponseEntity.ok(ApiResponse.ok("Rol encontrado", new RoleResponse(role.id(), role.name(), role.createdAt())));
+        Role role = getRoleUseCase.execute(id);
+        return ResponseEntity.ok(ApiResponse.ok("Rol encontrado", toResponse(role)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<RoleResponse>> update(@PathVariable Long id, @Valid @RequestBody CreateRoleRequest request) {
-        Role updated = new Role(id, request.name(), null);
-        var saved = rolePersistence.save(updated);
-        return ResponseEntity.ok(ApiResponse.ok("Rol actualizado", new RoleResponse(saved.id(), saved.name(), saved.createdAt())));
+    public ResponseEntity<ApiResponse<RoleResponse>> update(@PathVariable Long id,
+                                                             @Valid @RequestBody CreateRoleRequest request) {
+        Role updated = updateRoleUseCase.execute(id, request.name());
+        return ResponseEntity.ok(ApiResponse.ok("Rol actualizado", toResponse(updated)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        rolePersistence.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        deleteRoleUseCase.execute(id);
+        return ResponseEntity.ok(ApiResponse.ok("Rol eliminado", null));
+    }
+
+    private RoleResponse toResponse(Role role) {
+        return new RoleResponse(role.id(), role.name(), role.createdAt());
     }
 }
