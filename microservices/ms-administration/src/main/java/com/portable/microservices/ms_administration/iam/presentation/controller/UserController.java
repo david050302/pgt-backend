@@ -1,27 +1,40 @@
 package com.portable.microservices.ms_administration.iam.presentation.controller;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.portable.microservices.ms_administration.iam.domain.model.Account;
+import com.portable.microservices.ms_administration.iam.domain.model.User;
 import com.portable.microservices.ms_administration.iam.domain.ports.in.CreateUserPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.out.UserPersistencePortOut;
 import com.portable.microservices.ms_administration.iam.infrastructure.persistence.mapper.UserPresentationMapper;
 import com.portable.microservices.ms_administration.iam.presentation.dto.CreateUserRequest;
+import com.portable.microservices.ms_administration.iam.presentation.dto.UpdateUserRequest;
 import com.portable.microservices.ms_administration.iam.presentation.dto.UserAccountResponse;
+import com.portable.microservices.ms_administration.iam.presentation.dto.UserResponse;
 import com.portable.shared.infrastructure.presentation.ApiResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
     
     private final CreateUserPortIn createUserUseCase;
+    private final UserPersistencePortOut userPersistence;
     private final UserPresentationMapper mapper;
 
     @PostMapping
@@ -40,5 +53,34 @@ public class UserController {
         var response = mapper.toResponse(account);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Usuario creado exitosamente", response));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserResponse>>> listUsers() {
+        var users = userPersistence.findAll();
+        var responses = users.stream().map(mapper::toResponse).toList();
+        return ResponseEntity.ok(ApiResponse.ok("Usuarios listados", responses));
+    }
+
+    @GetMapping("/{uuid}")
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID uuid) {
+        User user = userPersistence.findByUuid(uuid).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        return ResponseEntity.ok(ApiResponse.ok("Usuario encontrado", mapper.toResponse(user)));
+    }
+
+    @PutMapping("/{uuid}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID uuid, @Valid @RequestBody UpdateUserRequest request) {
+        User existing = userPersistence.findByUuid(uuid).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        User updated = new User(existing.id(), existing.uuid(), request.firstName(), request.lastName(), existing.dni(), existing.roles(), existing.createdAt(), java.time.ZonedDateTime.now());
+
+        var saved = userPersistence.save(updated);
+        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", mapper.toResponse(saved)));
+    }
+
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID uuid) {
+        userPersistence.deleteById(uuid.toString());
+        return ResponseEntity.noContent().build();
     }
 }

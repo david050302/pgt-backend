@@ -9,4 +9,5 @@ public interface RolePersistencePortOut {
     Role save(Role role);
     Optional<Role> findByName(String name);
     List<Role> findAll();
+    void deleteById(Long id);
 }
