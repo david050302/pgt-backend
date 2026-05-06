@@ -34,7 +34,7 @@ public class UserPersistenceAdapter implements UserPersistencePortOut {
             return repository.findById(longId).map(mapper::toDomain);
         } catch (NumberFormatException e) {
             try {
-                java.util.UUID uuid = java.util.UUID.fromString(id);
+                UUID uuid = UUID.fromString(id);
                 return repository.findByUuid(uuid).map(mapper::toDomain);
             } catch (IllegalArgumentException ex) {
                 return Optional.empty();
@@ -64,7 +64,7 @@ public class UserPersistenceAdapter implements UserPersistencePortOut {
             repository.deleteById(longId);
         } catch (NumberFormatException e) {
             try {
-                java.util.UUID uuid = java.util.UUID.fromString(id);
+                UUID uuid = UUID.fromString(id);
                 repository.deleteByUuid(uuid);
             } catch (IllegalArgumentException ex) {
                 // invalid id format — no-op

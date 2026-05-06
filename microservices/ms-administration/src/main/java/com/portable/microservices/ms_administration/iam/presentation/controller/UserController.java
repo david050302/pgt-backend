@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.portable.microservices.ms_administration.iam.domain.model.Account;
-import com.portable.microservices.ms_administration.iam.domain.model.User;
+
 import com.portable.microservices.ms_administration.iam.domain.ports.in.CreateUserPortIn;
-import com.portable.microservices.ms_administration.iam.domain.ports.out.UserPersistencePortOut;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.ListUsersPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.GetUserPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.UpdateUserPortIn;
+import com.portable.microservices.ms_administration.iam.domain.ports.in.DeleteUserPortIn;
 import com.portable.microservices.ms_administration.iam.infrastructure.persistence.mapper.UserPresentationMapper;
 import com.portable.microservices.ms_administration.iam.presentation.dto.CreateUserRequest;
 import com.portable.microservices.ms_administration.iam.presentation.dto.UpdateUserRequest;
@@ -34,7 +36,10 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
     
     private final CreateUserPortIn createUserUseCase;
-    private final UserPersistencePortOut userPersistence;
+    private final ListUsersPortIn listUsersUseCase;
+    private final GetUserPortIn getUserUseCase;
+    private final UpdateUserPortIn updateUserUseCase;
+    private final DeleteUserPortIn deleteUserUseCase;
     private final UserPresentationMapper mapper;
 
     @PostMapping
@@ -57,30 +62,39 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> listUsers() {
-        var users = userPersistence.findAll();
+        var users = listUsersUseCase.execute();
         var responses = users.stream().map(mapper::toResponse).toList();
+
         return ResponseEntity.ok(ApiResponse.ok("Usuarios listados", responses));
     }
 
     @GetMapping("/{uuid}")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID uuid) {
-        User user = userPersistence.findByUuid(uuid).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        return ResponseEntity.ok(ApiResponse.ok("Usuario encontrado", mapper.toResponse(user)));
+        var user = getUserUseCase.execute(uuid);
+        var response = mapper.toResponse(user);
+
+        return ResponseEntity.ok(ApiResponse.ok("Usuario encontrado", response));
     }
 
     @PutMapping("/{uuid}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable UUID uuid, @Valid @RequestBody UpdateUserRequest request) {
-        User existing = userPersistence.findByUuid(uuid).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        var command = new UpdateUserPortIn.UpdateUserCommand(
+            uuid,
+            request.firstName(),
+            request.lastName(),
+            request.headquarterId(),
+            request.roleName()
+        );
 
-        User updated = new User(existing.id(), existing.uuid(), request.firstName(), request.lastName(), existing.dni(), existing.roles(), existing.createdAt(), java.time.ZonedDateTime.now());
+        var updated = updateUserUseCase.execute(command);
+        var response = mapper.toResponse(updated);
 
-        var saved = userPersistence.save(updated);
-        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", mapper.toResponse(saved)));
+        return ResponseEntity.ok(ApiResponse.ok("Usuario actualizado", response));
     }
 
-    @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID uuid) {
-        userPersistence.deleteById(uuid.toString());
-        return ResponseEntity.noContent().build();
-    }
+@DeleteMapping("/{uuid}")
+public ResponseEntity<Void> deleteUser(@PathVariable UUID uuid) {
+    deleteUserUseCase.execute(uuid); // <-- Solo pasas la variable directa
+    return ResponseEntity.noContent().build();
+}
 }
