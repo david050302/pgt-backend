@@ -1,24 +1,15 @@
 package com.portable.microservices.ms_inventory.locations.infrastructure.persistence.mapper;
 
+
+import org.mapstruct.Mapper;
+
 import com.portable.microservices.ms_inventory.locations.domain.model.Location;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.entity.LocationJpaEntity;
 
-import java.time.LocalDateTime;
+@Mapper(componentModel = "spring")
+public interface LocationPersistenceMapper {
 
-public class LocationPersistenceMapper {
+    Location toDomain(LocationJpaEntity locationJpaEntity);
+    LocationJpaEntity toEntity(Location domain);
 
-    public static Location toDomain(LocationJpaEntity e) {
-        return new Location(e.getId(), e.getName(), e.getDescription(), e.getCreatedAt());
-    }
-
-    public static LocationJpaEntity toEntity(Location d) {
-        LocationJpaEntity e = new LocationJpaEntity();
-        if (d.getId() != null) {
-            e.setId(d.getId());
-        }
-        e.setName(d.getName());
-        e.setDescription(d.getDescription());
-        e.setCreatedAt(d.getCreatedAt() != null ? d.getCreatedAt() : LocalDateTime.now());
-        return e;
-    }
 }

@@ -1,44 +1,51 @@
 package com.portable.microservices.ms_inventory.locations.infrastructure.persistence.adapter;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.stereotype.Component;
+
 import com.portable.microservices.ms_inventory.locations.domain.model.Location;
 import com.portable.microservices.ms_inventory.locations.domain.ports.out.LocationPersistencePortOut;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.mapper.LocationPersistenceMapper;
-import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.entity.LocationJpaEntity;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.repository.LocationJpaRepository;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class LocationPersistenceAdapter implements LocationPersistencePortOut {
 
     private final LocationJpaRepository repository;
 
-    public LocationPersistenceAdapter(LocationJpaRepository repository) {
+    private final LocationPersistenceMapper mapper;
+
+    public LocationPersistenceAdapter(LocationJpaRepository repository, LocationPersistenceMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
     @Override
-    public List<Location> findAll() {
-        return repository.findAll().stream().map(LocationPersistenceMapper::toDomain).collect(Collectors.toList());
+    public boolean existsByCodBarras(String codBarras) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     @Override
-    public Optional<Location> findById(Long id) {
-        return repository.findById(id).map(LocationPersistenceMapper::toDomain);
+    public List<Location> findAllActives() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Optional<Location> findById(UUID idLocacion) {
+        // TODO Auto-generated method stub
+        return Optional.empty();
     }
 
     @Override
     public Location save(Location location) {
-        LocationJpaEntity entity = LocationPersistenceMapper.toEntity(location);
-        LocationJpaEntity saved = repository.save(entity);
-        return LocationPersistenceMapper.toDomain(saved);
+        // TODO Auto-generated method stub
+        return null;
     }
 
-    @Override
-    public void deleteById(Long id) {
-        repository.deleteById(id);
-    }
+
 }

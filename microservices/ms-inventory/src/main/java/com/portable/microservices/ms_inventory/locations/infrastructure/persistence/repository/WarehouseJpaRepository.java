@@ -1,13 +1,11 @@
 package com.portable.microservices.ms_inventory.locations.infrastructure.persistence.repository;
 
-import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.entity.LocationJpaEntity;
-
-import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.entity.WarehouseJpaEntity;
+
 @Repository
-public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, UUID> {
+public interface WarehouseJpaRepository extends JpaRepository<WarehouseJpaEntity, Long>{
 
 }
