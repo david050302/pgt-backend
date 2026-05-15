@@ -2,11 +2,13 @@ package com.portable.microservices.ms_inventory.locations.infrastructure.persist
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.portable.microservices.ms_inventory.locations.domain.model.Warehouse;
 import com.portable.microservices.ms_inventory.locations.domain.ports.out.WarehousePersistencePortOut;
+import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.entity.WarehouseJpaEntity;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.mapper.WarehousePersistenceMapper;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.repository.WarehouseJpaRepository;
 
@@ -15,7 +17,6 @@ public class WarehousePersistenceAdapter implements WarehousePersistencePortOut 
 
 
     private final WarehouseJpaRepository repository;
-
     private final WarehousePersistenceMapper mapper;
 
     public WarehousePersistenceAdapter(WarehouseJpaRepository repository,
@@ -28,32 +29,36 @@ public class WarehousePersistenceAdapter implements WarehousePersistencePortOut 
 
     @Override
     public boolean existsByCodAlm(String codAlm) {
-        // TODO Auto-generated method stub
-        return false;
+        return repository.existsByCodAlm(codAlm);
     }
 
     @Override
     public boolean existsById(Long id) {
-        // TODO Auto-generated method stub
-        return false;
+        return repository.existsById(id);
     }
 
     @Override
     public Optional<Warehouse> findById(Long id) {
-        // TODO Auto-generated method stub
-        return Optional.empty();
+       return repository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public Warehouse save(Warehouse warehouse) {
-        // TODO Auto-generated method stub
-        return null;
+        // 1. Convertimos el objeto de Dominio a Entidad de BD
+        WarehouseJpaEntity entity = mapper.toEntity(warehouse);
+        
+        // 2. Lo guardamos en la tabla
+        WarehouseJpaEntity savedEntity = repository.save(entity);
+        
+        // 3. Convertimos la Entidad guardada de regreso a Dominio para el Caso de Uso
+        return mapper.toDomain(savedEntity);
     }
 
     @Override
     public List<Warehouse> findAllActives() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findAllActives'");
+return repository.findByActivoTrue().stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 
 

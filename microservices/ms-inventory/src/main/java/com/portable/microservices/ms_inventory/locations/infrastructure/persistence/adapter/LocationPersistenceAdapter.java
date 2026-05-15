@@ -3,11 +3,13 @@ package com.portable.microservices.ms_inventory.locations.infrastructure.persist
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.portable.microservices.ms_inventory.locations.domain.model.Location;
 import com.portable.microservices.ms_inventory.locations.domain.ports.out.LocationPersistencePortOut;
+import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.entity.LocationJpaEntity;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.mapper.LocationPersistenceMapper;
 import com.portable.microservices.ms_inventory.locations.infrastructure.persistence.repository.LocationJpaRepository;
 
@@ -25,26 +27,29 @@ public class LocationPersistenceAdapter implements LocationPersistencePortOut {
 
     @Override
     public boolean existsByCodBarras(String codBarras) {
-        // TODO Auto-generated method stub
-        return false;
+        return repository.existsByCodBarras(codBarras);
     }
 
     @Override
     public List<Location> findAllActives() {
-        // TODO Auto-generated method stub
-        return null;
+        return repository.findByActivoTrue().stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Override
     public Optional<Location> findById(UUID idLocacion) {
-        // TODO Auto-generated method stub
-        return Optional.empty();
+        return repository.findById(idLocacion).map(mapper::toDomain);
     }
 
     @Override
     public Location save(Location location) {
-        // TODO Auto-generated method stub
-        return null;
+        // 1. Dominio -> Entidad (Idioma BD)
+        LocationJpaEntity entity = mapper.toEntity(location);
+        // 2. Guardamos en BD
+        LocationJpaEntity savedEntity = repository.save(entity);
+        // 3. Entidad guardada -> Dominio de regreso al Caso de Uso
+        return mapper.toDomain(savedEntity);
     }
 
 

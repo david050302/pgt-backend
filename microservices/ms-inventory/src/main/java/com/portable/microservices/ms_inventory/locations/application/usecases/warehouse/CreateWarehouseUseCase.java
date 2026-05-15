@@ -10,6 +10,9 @@ import com.portable.microservices.ms_inventory.locations.domain.ports.out.Wareho
 public class CreateWarehouseUseCase implements CreateWarehousePortIn{
 
     private WarehousePersistencePortOut persistence;
+    public CreateWarehouseUseCase(WarehousePersistencePortOut persistence) {
+        this.persistence = persistence;
+    }
 
     @Override
     public Warehouse execute(Warehouse warehouse) {
